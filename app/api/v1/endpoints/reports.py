@@ -7,6 +7,7 @@ from app.models.teacher    import TeacherMaster
 from app.models.student    import StudentMaster
 from app.models.assessment import Assessment, AssessmentResult
 from app.schemas.report    import ReportResponse, StudentReportRow
+from app.services import student_service
 
 router = APIRouter(prefix="/reports", tags=["reports"])
 
@@ -17,10 +18,11 @@ def get_report(
     db: Session = Depends(get_db),
 ):
     tid = teacher.teacher_id
-    # Students linked via class_id (no direct teacher_id FK in sgs schema)
+    # Same roll as the Dashboard headcount and the Students tab — see
+    # student_service. This used to filter on class_id alone, so inactive and
+    # deleted students were counted here but nowhere else.
     students = (
-        db.query(StudentMaster)
-        .filter(StudentMaster.class_id == teacher.class_id)
+        student_service.roll_query(db, teacher.class_id)
         .order_by(StudentMaster.roll_no)
         .all()
     )

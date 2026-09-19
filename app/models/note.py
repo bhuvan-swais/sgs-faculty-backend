@@ -32,4 +32,10 @@ class TeacherNote(Base):
     notes      = Column(String, nullable=True)   # stores JSON: {title, content, chapter, ...}
     created_at = Column(DateTime, nullable=True)
 
+    # Soft delete. Deleting sets this to "Deleted" instead of removing the row,
+    # so a note can be restored until the year-end purge. NULL and "Active"
+    # both mean live — rows created before the audit columns existed are NULL.
+    record_status = Column(String, nullable=True)
+    updated_at    = Column(DateTime, nullable=True)  # stamped by trg_audit_stamp (fn_stamp_updated_at)
+
     teacher = relationship("TeacherMaster", back_populates="notes")

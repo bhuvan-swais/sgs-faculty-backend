@@ -1,5 +1,7 @@
 from datetime import date
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
+
+from app.core.dates import reject_past
 
 
 class AssignmentOut(BaseModel):
@@ -23,3 +25,10 @@ class AssignmentCreate(BaseModel):
     subject_id: int | None = None
     chapter_id: int | None = None
     due_date: date | None = None
+
+    # The date picker also blocks past dates; this is the check that holds
+    # when the request doesn't come from the picker.
+    @field_validator("due_date")
+    @classmethod
+    def _due_not_past(cls, v):
+        return reject_past(v, "Due date")

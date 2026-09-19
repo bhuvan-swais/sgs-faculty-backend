@@ -30,6 +30,17 @@ def create_note(
     return note_service.create_note(db, teacher.teacher_id, payload)
 
 
+@router.get("/deleted", response_model=NoteListResponse)
+def list_deleted_notes(
+    teacher: TeacherMaster = Depends(get_current_teacher),
+    db: Session = Depends(get_db),
+):
+    """Soft-deleted notes, restorable until the year-end purge.
+    Declared before /{note_id} so "deleted" is not parsed as an id."""
+    notes = note_service.get_deleted_notes(db, teacher.teacher_id)
+    return NoteListResponse(notes=notes, total=len(notes))
+
+
 @router.get("/{note_id}", response_model=NoteOut)
 def get_note(
     note_id: int,
@@ -61,6 +72,19 @@ def delete_note(
     teacher: TeacherMaster = Depends(get_current_teacher),
     db: Session = Depends(get_db),
 ):
+    """Soft delete — the note disappears from lists but can be restored."""
     deleted = note_service.delete_note(db, teacher.teacher_id, note_id)
     if not deleted:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Note not found")
+
+
+@router.post("/{note_id}/restore", response_model=NoteOut)
+def restore_note(
+    note_id: int,
+    teacher: TeacherMaster = Depends(get_current_teacher),
+    db: Session = Depends(get_db),
+):
+    note = note_service.restore_note(db, teacher.teacher_id, note_id)
+    if not note:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No deleted note with that id")
+    return note
