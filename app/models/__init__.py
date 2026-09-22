@@ -5,7 +5,8 @@ from app.models.student     import StudentMaster
 from app.models.assessment  import Assessment, AssessmentResult
 from app.models.lesson_plan import TeacherLessonPlan
 from app.models.chapter     import SgsChapterContent
+from app.models.question_paper import TeacherQuestionPaper
 
 __all__ = ["UserMaster", "TeacherMaster", "TeacherNote",
            "StudentMaster", "Assessment", "AssessmentResult",
-           "TeacherLessonPlan", "SgsChapterContent"]
+           "TeacherLessonPlan", "SgsChapterContent", "TeacherQuestionPaper"]

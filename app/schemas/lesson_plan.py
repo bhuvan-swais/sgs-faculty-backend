@@ -1,6 +1,8 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator, model_validator
 from typing import Optional
 from datetime import datetime, date
+
+from app.core.dates import reject_past
 
 
 class LessonPlanGenerateRequest(BaseModel):
@@ -23,6 +25,27 @@ class LessonPlanGenerateRequest(BaseModel):
     @property
     def chapter(self) -> str:
         return (self.topic or self.chapterName or "").strip()
+
+    # A plan is made for lessons still to be taught: neither date may be in
+    # the past, and completion cannot precede commencement. actualCompletion
+    # (LessonPlanCompletionRequest) is deliberately exempt — it records
+    # something that already happened.
+    @field_validator("dateOfCommencement")
+    @classmethod
+    def _start_not_past(cls, v):
+        return reject_past(v, "Date of commencement")
+
+    @field_validator("expectedCompletion")
+    @classmethod
+    def _end_not_past(cls, v):
+        return reject_past(v, "Expected completion")
+
+    @model_validator(mode="after")
+    def _end_after_start(self):
+        if (self.dateOfCommencement and self.expectedCompletion
+                and self.expectedCompletion < self.dateOfCommencement):
+            raise ValueError("Expected completion cannot be before date of commencement")
+        return self
 
 
 class LessonPlanSaveRequest(BaseModel):

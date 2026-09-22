@@ -1,4 +1,5 @@
 import re
+import re
 import httpx
 from fastapi import HTTPException, status
 
@@ -87,6 +88,21 @@ def _bullets(block: str) -> list[str]:
     return [i for i in items if i]
 
 
+_SECTION_TOKEN = re.compile(r"^[A-Za-z]{1,2}\d?$")   # A, B, A1, AB — not "10"
+
+
+def _split_class_section(value: str) -> tuple[str, str]:
+    """
+    "Class 8 A" → ("Class 8", "A");  "8th Grade - A" → ("8th Grade", "A");
+    "Class 10"  → ("Class 10", "")   — a trailing number is the class, not a section.
+    """
+    text = value.strip()
+    level, _, last = text.rpartition(" ")
+    if level and _SECTION_TOKEN.match(last):
+        return level.rstrip(" -").strip(), last
+    return text, ""
+
+
 def _class_section(teacher) -> str:
     """`Class 8 A` — the two columns the form prints as one field."""
     parts = []
@@ -171,12 +187,34 @@ async def generate_lesson_plan(req, teacher) -> dict:
         "actual_completion":    "",
     }
 
+    # The AI writes the plan body from this. Class, section, subject, designation
+    # and dates are what its prompt prints; without them it reads "Not specified"
+    # and the plan comes back pitched at no class in particular. The AI service
+    # wants class and section as separate fields; the teacher record already has
+    # them apart, and a form override ("Class 8 A") is split on its last space.
+    if req.classSection:
+        level, section = _split_class_section(req.classSection)
+    else:
+        level = f"Class {teacher.class_id}" if teacher.class_id else ""
+        section = teacher.section_1 or ""
+
+    def _or_unspecified(v):
+        # Her handler defaults absent fields to this; sending "" would print "".
+        return v or "Not specified"
+
     payload = {
         "chapterId": req.chapterId,
         "topic": req.chapter,
         "noOfPeriods": req.noOfPeriods,
         # Kept for the AI service's current handler, which still reads it.
         "durationMinutes": req.noOfPeriods * settings.PERIOD_MINUTES,
+        "classLevel": _or_unspecified(level),
+        "section": _or_unspecified(section),
+        "subject": _or_unspecified(header["subject"]),
+        "designation": _or_unspecified(header["designation"]),
+        "dateOfCommencement": _or_unspecified(header["date_of_commencement"]),
+        "expectedCompletion": _or_unspecified(header["expected_completion"]),
+        "actualCompletion": "",
         "userInfo": _user_info(teacher),
     }
 

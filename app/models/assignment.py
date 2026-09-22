@@ -25,10 +25,20 @@ class AssignmentMaster(Base):
 
 
 class AssignmentResult(Base):
+    """One row per (assignment, student): written at assignment time with
+    status "assigned", updated when the student submits. The title/subject/
+    due-date columns are copies of the master row so student-side apps can
+    list without a join."""
     __tablename__ = "sgs_assignment_results"
 
     assignment_result_id = Column(BigInteger, primary_key=True)
     assignment_id        = Column(BigInteger, nullable=True)
     student_id           = Column(BigInteger, nullable=False)
+    subject_id           = Column(BigInteger, nullable=True)
+    assignment_title     = Column(String(200), nullable=True)
+    due_date             = Column(Date, nullable=True)
     status               = Column(String(50), nullable=True)
     submitted_at         = Column(DateTime, nullable=True)
+    created_datetime     = Column(DateTime, nullable=True)
+    record_status        = Column(String(20), nullable=True)
+    version_no           = Column(Integer, nullable=True)
