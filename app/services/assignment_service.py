@@ -190,7 +190,19 @@ def get_assignment_students(db: Session, teacher: TeacherMaster, assignment_id: 
         AssignmentStudentRow(
             student_id=s.student_id, full_name=s.full_name, roll_no=s.roll_no,
             status=r.status, submitted_at=r.submitted_at,
+            submission_text=r.submission_text,
+            submission_link=r.submission_link,
+            submitted_file_name=r.submitted_file_name,
+            submitted_file_size=r.submitted_file_size,
+            marks_obtained=float(r.marks_obtained) if r.marks_obtained is not None else None,
+            total_marks=float(r.total_marks) if r.total_marks is not None else None,
         )
         for r, s in rows
     ]
-    return AssignmentStudentsResponse(assignment_id=assignment_id, students=students, total=len(students))
+    return AssignmentStudentsResponse(
+        assignment_id=assignment_id,
+        title=a.assignment_title,
+        students=students,
+        total=len(students),
+        submitted_count=sum(1 for x in students if x.submitted_at is not None),
+    )

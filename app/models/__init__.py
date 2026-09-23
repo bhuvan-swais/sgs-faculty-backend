@@ -6,7 +6,9 @@ from app.models.assessment  import Assessment, AssessmentResult
 from app.models.lesson_plan import TeacherLessonPlan
 from app.models.chapter     import SgsChapterContent
 from app.models.question_paper import TeacherQuestionPaper
+from app.models.parent_notification import ParentNotification
 
 __all__ = ["UserMaster", "TeacherMaster", "TeacherNote",
            "StudentMaster", "Assessment", "AssessmentResult",
-           "TeacherLessonPlan", "SgsChapterContent", "TeacherQuestionPaper"]
+           "TeacherLessonPlan", "SgsChapterContent", "TeacherQuestionPaper",
+           "ParentNotification"]
